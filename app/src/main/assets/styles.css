@@ -4444,3 +4444,96 @@ body:has(#view-live.active) > .ambient-waves {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   SONIX TV — Live cinematic atmosphere for the ten remote-controlled themes.
+   Decorative-only overlay on the existing ambient layer. It is pointer-safe,
+   does not create DOM nodes, and remains hidden by the existing live-player rule.
+   ========================================================================== */
+.ambient-waves {
+  --sonix-ribbon-a: rgba(214, 181, 109, .34);
+  --sonix-ribbon-b: rgba(134, 184, 232, .27);
+  --sonix-marble-vein: rgba(134, 184, 232, .12);
+  isolation: isolate;
+}
+.ambient-waves::before,
+.ambient-waves::after {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  display: block;
+  pointer-events: none;
+  opacity: .78;
+  background-repeat: no-repeat;
+  will-change: transform, background-position;
+}
+.ambient-waves::before {
+  background-image:
+    radial-gradient(ellipse 58% 27% at 18% 82%, var(--sonix-ribbon-a) 0%, transparent 72%),
+    radial-gradient(ellipse 48% 22% at 88% 18%, var(--sonix-ribbon-b) 0%, transparent 74%),
+    linear-gradient(118deg, transparent 37%, var(--sonix-ribbon-a) 37.18%, transparent 37.48%, transparent 52%, var(--sonix-ribbon-b) 52.16%, transparent 52.42%);
+  background-size: 145% 145%;
+  animation: sonixAtmosphereFlow 27s ease-in-out infinite alternate;
+}
+.ambient-waves::after {
+  opacity: .48;
+  background-image:
+    radial-gradient(ellipse 66% 30% at 78% 92%, transparent 57%, var(--sonix-ribbon-b) 57.35%, transparent 58.1%),
+    radial-gradient(ellipse 58% 26% at 8% 12%, transparent 59%, var(--sonix-ribbon-a) 59.35%, transparent 60.1%),
+    repeating-linear-gradient(132deg, transparent 0 74px, var(--sonix-ribbon-b) 75px, transparent 77px, transparent 142px);
+  background-size: 155% 155%;
+  animation: sonixAtmosphereSweep 34s ease-in-out infinite alternate;
+}
+@keyframes sonixAtmosphereFlow {
+  0% { transform: translate3d(-1.2%, 1%, 0) rotate(-1.2deg); background-position: 0% 20%; }
+  50% { transform: translate3d(1%, -1.2%, 0) rotate(.5deg); }
+  100% { transform: translate3d(1.8%, .8%, 0) rotate(1.1deg); background-position: 100% 80%; }
+}
+@keyframes sonixAtmosphereSweep {
+  0% { transform: translate3d(1.2%, -1%, 0) scale(1); background-position: 100% 0%; }
+  100% { transform: translate3d(-1.5%, 1.4%, 0) scale(1.035); background-position: 0% 100%; }
+}
+
+/* Distinct material treatment for the two marble palettes. */
+:root[data-sonix-atmosphere="pearl-marble"] .ambient-waves::after,
+:root[data-sonix-atmosphere="carrara-marble"] .ambient-waves::after {
+  opacity: .34;
+  background-image:
+    repeating-linear-gradient(154deg, transparent 0 34px, var(--sonix-marble-vein) 35px, transparent 37px, transparent 82px),
+    repeating-linear-gradient(24deg, transparent 0 118px, var(--sonix-ribbon-a) 119px, transparent 121px, transparent 190px),
+    radial-gradient(ellipse at 50% 50%, rgba(255,255,255,.055), transparent 68%);
+  background-size: 180% 180%;
+}
+:root[data-sonix-atmosphere="pearl-marble"] .ambient-waves::before {
+  opacity: .52;
+}
+:root[data-sonix-atmosphere="carrara-marble"] .ambient-waves::before {
+  opacity: .62;
+}
+
+/* Material-specific glow intensity and motion character. */
+:root[data-sonix-atmosphere="ruby-velvet"] .ambient-waves::before,
+:root[data-sonix-atmosphere="imperial-amethyst"] .ambient-waves::before {
+  opacity: .92;
+}
+:root[data-sonix-atmosphere="emerald-palace"] .ambient-waves::after,
+:root[data-sonix-atmosphere="celestial-cyan"] .ambient-waves::after {
+  opacity: .62;
+}
+:root[data-sonix-atmosphere="midnight-sapphire"] .ambient-waves::before,
+:root[data-sonix-atmosphere="black-onyx"] .ambient-waves::before {
+  opacity: .7;
+}
+:root[data-sonix-atmosphere="imperial-bronze"] .ambient-waves::after,
+:root[data-sonix-atmosphere="royal-navy"] .ambient-waves::after {
+  opacity: .56;
+}
+
+/* Keep the visual treatment calm when the device requests reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .ambient-waves::before,
+  .ambient-waves::after {
+    animation: none !important;
+    will-change: auto;
+  }
+}
