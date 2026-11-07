@@ -24,8 +24,8 @@ internal data class DecodedSubtitle(
  */
 internal object SubtitlePipeline {
     private const val MAX_SUBTITLE_BYTES = 20 * 1024 * 1024
-    private val supportedExtensions = setOf("srt", "vtt", "ass", "ssa", "ttml", "xml", "txt")
-    private val preferredSubtitleExtensions = setOf("srt", "vtt", "ass", "ssa", "ttml", "xml")
+    private val supportedExtensions = setOf("srt", "vtt", "ass", "ssa", "ttml", "xml", "txt", "sub")
+    private val preferredSubtitleExtensions = setOf("srt", "vtt", "ass", "ssa", "ttml", "xml", "sub")
 
     fun decodePayload(
         rawBytes: ByteArray,
@@ -84,6 +84,7 @@ internal object SubtitlePipeline {
             sample.startsWith("WEBVTT", ignoreCase = true) -> "vtt"
             sample.contains("[Script Info]", ignoreCase = true) -> "ass"
             sample.contains("<tt", ignoreCase = true) -> "ttml"
+            Regex("""(?m)^\s*\{\d+}\{\d+}""").containsMatchIn(sample) -> "sub"
             else -> "srt"
         }
     }
@@ -130,18 +131,48 @@ internal object SubtitlePipeline {
                     add(begin, end, match.groupValues[2])
                 }
             }
+            "sub" -> {
+                // MicroDVD: {startFrame}{endFrame}subtitle text.
+                val lines = source.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }
+                var fps = 25.0
+                val frameCue = Regex("""^\{(\d+)}\{(\d+)}(.*)$""")
+                lines.forEach { line ->
+                    val match = frameCue.matchEntire(line) ?: return@forEach
+                    val first = match.groupValues[1].toLongOrNull() ?: return@forEach
+                    val last = match.groupValues[2].toLongOrNull() ?: return@forEach
+                    val body = match.groupValues[3]
+                    if (first == 1L && last == 1L && body.toDoubleOrNull() != null) {
+                        fps = body.toDouble().coerceIn(1.0, 120.0)
+                    } else if (last > first) {
+                        val startMs = (first * 1000.0 / fps).toLong()
+                        val endMs = (last * 1000.0 / fps).toLong()
+                        val clean = cleanCueText(body.replace("|", "\n"))
+                        if (clean.isNotBlank() && endMs > startMs) result += TimedSubtitleCue(startMs, endMs, clean)
+                    }
+                }
+            }
             else -> {
-                // SRT and WebVTT: split into cue blocks, allowing cue identifiers,
-                // VTT settings, CRLF, and both HH:MM:SS.mmm and MM:SS.mmm timestamps.
+                // Parse timestamped SRT/VTT cues across the whole document. Some providers
+                // omit blank separators, so splitting on empty lines silently loses cues.
                 val timestamp = Regex(
-                    """((?:\d{1,2}:)?\d{2}:\d{2}[,.]\d{1,3})\s*-->\s*((?:\d{1,2}:)?\d{2}:\d{2}[,.]\d{1,3})"""
+                    """^\s*((?:\d{1,2}:)?\d{2}:\d{2}[,.]\d{1,3})\s*-->\s*((?:\d{1,2}:)?\d{2}:\d{2}[,.]\d{1,3})(?:\s+.*)?$"""
                 )
-                source.split(Regex("\\n\\s*\\n")).forEach { block ->
-                    val lines = block.lines()
-                    val index = lines.indexOfFirst { timestamp.containsMatchIn(it) }
-                    if (index < 0 || index + 1 >= lines.size) return@forEach
-                    val match = timestamp.find(lines[index]) ?: return@forEach
-                    add(match.groupValues[1], match.groupValues[2], lines.drop(index + 1).joinToString("\n"))
+                val lines = source.lines()
+                var index = 0
+                while (index < lines.size) {
+                    val match = timestamp.matchEntire(lines[index])
+                    if (match == null) {
+                        index++
+                        continue
+                    }
+                    val textLines = mutableListOf<String>()
+                    index++
+                    while (index < lines.size && timestamp.matchEntire(lines[index]) == null) {
+                        val line = lines[index]
+                        if (line.isNotBlank() && !Regex("""^\s*\d+\s*$""").matches(line)) textLines += line
+                        index++
+                    }
+                    add(match.groupValues[1], match.groupValues[2], textLines.joinToString("\n"))
                 }
             }
         }
