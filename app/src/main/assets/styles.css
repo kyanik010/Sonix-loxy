@@ -67,7 +67,7 @@
       position: absolute;
       inset: 0;
       pointer-events: none;
-      opacity: 0.22;
+      opacity: var(--sonix-atmosphere-opacity, 0.22);
       background-image: 
         radial-gradient(ellipse at 50% 0%, var(--focus-soft) 0%, transparent 50%),
         radial-gradient(ellipse at 100% 100%, var(--copper-wave) 0%, transparent 42%),
