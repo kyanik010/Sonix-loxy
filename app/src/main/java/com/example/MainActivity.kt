@@ -45,7 +45,6 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
 import androidx.media3.common.Format
 import androidx.media3.common.util.UnstableApi
@@ -526,9 +525,6 @@ class MainActivity : ComponentActivity() {
 
         private fun attachNativePlayerListeners(player: ExoPlayer) {
             player.addListener(object : Player.Listener {
-                override fun onTracksChanged(tracks: Tracks) {
-                    }
-
                 override fun onCues(cueGroup: androidx.media3.common.text.CueGroup) {
                     if (cueGroup.cues.isNotEmpty()) {
                         android.util.Log.d(
