@@ -2088,7 +2088,6 @@
       } else {
         root.removeAttribute('data-sonix-atmosphere');
       }
-      root.style.setProperty('--sonix-atmosphere-opacity', supportedAtmospheres.includes(atmosphere) ? '0.44' : '0.22');
       const validColor = value => typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
       const rgba = (hex, alpha) => {
         const value = hex.slice(1);
