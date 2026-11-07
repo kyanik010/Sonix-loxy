@@ -1451,7 +1451,8 @@ class MainActivity : ComponentActivity() {
 
                 runOnUiThread {
                     if (activationGeneration != subtitleGeneration.get() ||
-                        player !== nativePlayer || mediaUri != activeMediaUri || !nativePlayerActive) {
+                        player !== nativePlayer || mediaUri != activeMediaUri) {
+                        finishSubtitleActivation(false, "تغير الفيديو قبل اكتمال تفعيل الترجمة")
                         return@runOnUiThread
                     }
 
@@ -1496,7 +1497,10 @@ class MainActivity : ComponentActivity() {
         pendingSubtitleNotifyLocal = false
         if (requestId != null) {
             val response = JSONObject().put("success", success)
-            if (!success) response.put("error", message.ifBlank { "تعذر تفعيل الترجمة" })
+            if (!success) {
+                response.put("stage", "activation")
+                response.put("error", message.ifBlank { "تعذر تفعيل الترجمة" })
+            }
             deliverSubtitleResponse(requestId, response.toString())
         } else if (notifyLocal && label.isNotBlank()) {
             notifyLocalSubtitleResult(success, label, message)
