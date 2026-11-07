@@ -170,4 +170,24 @@ class SubtitlePipelineTest {
         assertEquals("fa", SubtitlePipeline.detectLanguage("Persian (فارسی)"))
         assertEquals("und", SubtitlePipeline.detectLanguage("Unknown Label"))
     }
+
+    @Test
+    fun parsesSrtWhenProviderOmitsBlankLinesBetweenCues() {
+        val srt = "1\n00:00:01,000 --> 00:00:03,000\nFirst line\n2\n00:00:04,000 --> 00:00:06,000\nSecond line"
+        val cues = SubtitlePipeline.parse(srt, "srt")
+        assertEquals(2, cues.size)
+        assertEquals("First line", cues[0].text)
+        assertEquals("Second line", cues[1].text)
+    }
+
+    @Test
+    fun parsesMicroDvdSubtitlesWithDeclaredFrameRate() {
+        val sub = "{1}{1}25.000\n{25}{75}Hello|world\n{100}{150}Second"
+        val cues = SubtitlePipeline.parse(sub, "sub")
+        assertEquals(2, cues.size)
+        assertEquals(1000L, cues[0].startMs)
+        assertEquals(3000L, cues[0].endMs)
+        assertEquals("Hello\nworld", cues[0].text)
+    }
+
 }
