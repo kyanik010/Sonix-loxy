@@ -475,9 +475,11 @@
       if (typeof showToast === 'function') showToast('تم تحميل الترجمة وتفعيلها');
     } catch (error) {
       card.disabled = false;
-      statusBadge.textContent = 'فشل';
-      statusBadge.className = 'subtitle-action-status failed';
-      if (typeof showToast === 'function') showToast(error.message || 'تعذر تطبيق الترجمة');
+      statusBadge.textContent = error.stage === 'activation' ? 'تم التنزيل' : 'فشل';
+      statusBadge.className = 'subtitle-action-status ' + (error.stage === 'activation' ? 'downloaded' : 'failed');
+      if (typeof showToast === 'function') showToast(error.stage === 'activation'
+        ? 'تم تنزيل ملف الترجمة، لكن تعذر تفعيله: ' + (error.message || '')
+        : (error.message || 'تعذر تنزيل الترجمة'));
     }
   }
 
@@ -651,7 +653,11 @@
       pendingNativeRequests.delete(requestId);
       try {
         const value = JSON.parse(payload || '{}');
-        if (!value.success) throw new Error(value.error || 'فشل طلب الشبكة');
+        if (!value.success) {
+          const error = new Error(value.error || 'فشل طلب الشبكة');
+          error.stage = value.stage || 'download';
+          throw error;
+        }
         pending.resolve(value);
       } catch (error) { pending.reject(error); }
     },
